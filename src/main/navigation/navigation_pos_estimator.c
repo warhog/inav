@@ -906,7 +906,8 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
         }
 
         // Update estimate
-        posEstimator.est.aglAlt = posEstimator.est.aglAlt + posEstimator.est.aglVel * dt;
+        posEstimator.est.aglAlt = posEstimator.est.aglAlt + posEstimator.est.aglVel * dt + posEstimator.imu.accelNEU.V.Z * dt * dt * 0.5f;
+        posEstimator.est.aglVel = posEstimator.est.aglVel + posEstimator.imu.accelNEU.V.Z * dt;
 
         // Apply correction
         if (posEstimator.est.aglQual == SURFACE_QUAL_HIGH) {
@@ -972,15 +973,14 @@ static void publishEstimatedTopic(timeUs_t currentTimeUs)
 
         /* Publish altitude update and set altitude validity */
         if (posEstimator.est.epv < positionEstimationConfig()->max_eph_epv) {
+            const bool aglReliable = (posEstimator.est.aglQual == SURFACE_QUAL_HIGH);
             updateActualAltitudeAndClimbRate(true, posEstimator.est.pos.V.Z, posEstimator.est.vel.V.Z);
+            updateActualAGLAndClimgRate(true, aglReliable, posEstimator.est.aglAlt, posEstimator.est.aglVel);
         }
         else {
             updateActualAltitudeAndClimbRate(false, posEstimator.est.pos.V.Z, 0);
+            updateActualAGLAndClimgRate(false, false, posEstimator.est.aglAlt, 0);
         }
-
-        /* Publish surface distance */
-        const bool aglValid = (posEstimator.est.aglQual == SURFACE_QUAL_HIGH);
-        updateActualSurfaceDistance(aglValid, posEstimator.est.aglAlt, posEstimator.est.aglVel);
 
         /* Store history data */
         posEstimator.history.pos[posEstimator.history.index] = posEstimator.est.pos;
