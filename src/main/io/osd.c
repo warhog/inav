@@ -232,6 +232,16 @@ static bool osdDrawSingleElement(uint8_t item)
             break;
         }
 
+    case OSD_AVG_CELL_VOLTAGE:
+        {
+            uint8_t p = calculateBatteryPercentage();
+            p = (100 - p) / 16.6;
+            buff[0] = SYM_BATT_FULL + p;
+            uint16_t avg = vbat * 10 / batteryCellCount;
+            tfp_sprintf(buff + 1, "%d.%1dV ", avg / 100, avg % 100);
+            break;
+        }
+        
     case OSD_CURRENT_DRAW:
         buff[0] = SYM_AMP;
         tfp_sprintf(buff + 1, "%d.%02d ", abs(amperage) / 100, abs(amperage) % 100);
@@ -631,6 +641,7 @@ void osdDrawElements(void)
     }
 
     osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
+    osdDrawSingleElement(OSD_AVG_CELL_VOLTAGE);
     osdDrawSingleElement(OSD_RSSI_VALUE);
     osdDrawSingleElement(OSD_FLYTIME);
     osdDrawSingleElement(OSD_ONTIME);
@@ -682,6 +693,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
     osdConfig->item_pos[OSD_ALTITUDE] = OSD_POS(1, 0) | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 0) | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_AVG_CELL_VOLTAGE] = OSD_POS(12, 0);
     osdConfig->item_pos[OSD_RSSI_VALUE] = OSD_POS(23, 0) | VISIBLE_FLAG;
     //line 2
     osdConfig->item_pos[OSD_HOME_DIST] = OSD_POS(1, 1);
@@ -777,6 +789,11 @@ void osdUpdateAlarms(void)
     else
         osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
 
+    if (vbat <= (batteryWarningVoltage - 1))
+        osdConfigMutable()->item_pos[OSD_AVG_CELL_VOLTAGE] |= BLINK_FLAG;
+    else
+        osdConfigMutable()->item_pos[OSD_AVG_CELL_VOLTAGE] &= ~BLINK_FLAG;
+
     if (STATE(GPS_FIX) == 0)
         osdConfigMutable()->item_pos[OSD_GPS_SATS] |= BLINK_FLAG;
     else
@@ -802,6 +819,7 @@ void osdResetAlarms(void)
 {
     osdConfigMutable()->item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
     osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
+    osdConfigMutable()->item_pos[OSD_AVG_CELL_VOLTAGE] &= ~BLINK_FLAG;
     osdConfigMutable()->item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
     osdConfigMutable()->item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
     osdConfigMutable()->item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;

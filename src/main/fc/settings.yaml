@@ -1305,6 +1305,10 @@ groups:
         field: item_pos[OSD_MAIN_BATT_VOLTAGE]
         min: 0
         max: OSD_POS_MAX_CLI
+      - name: osd_avg_cell_voltage_pos
+        field: item_pos[OSD_AVG_CELL_VOLTAGE]
+        min: 0
+        max: OSD_POS_MAX_CLI
       - name: osd_rssi_pos
         field: item_pos[OSD_RSSI_VALUE]
         min: 0
